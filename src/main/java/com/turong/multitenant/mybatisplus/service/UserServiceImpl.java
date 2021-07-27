@@ -1,6 +1,5 @@
 package com.turong.multitenant.mybatisplus.service;
 
-import com.turong.multitenant.mybatisplus.controller.UserResponse;
 import com.turong.multitenant.mybatisplus.entity.User;
 import com.turong.multitenant.mybatisplus.mapper.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,18 +17,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserResponse getUser(String id) {
+    public User getUser(String id) {
         Optional<User> user = userMapper.findUser(id);
         if (!user.isPresent()) {
             return null;
         }
-        User foundUser = user.get();
-        return UserResponse.builder()
-                .id(foundUser.getId())
-                .username(foundUser.getUsername())
-                .email(foundUser.getEmail())
-                .tenant(foundUser.getTenant())
-                .build();
+        return user.get();
     }
 
     @Override
@@ -38,7 +31,11 @@ public class UserServiceImpl implements UserService {
         if (count == 0) {
             return null;
         }
-        return userMapper.findUserByEmail(userToCreate.getEmail()).orElseThrow(IllegalArgumentException::new);
+        Optional<User> user = userMapper.findUserByEmail(userToCreate.getEmail());
+        if (!user.isPresent()) {
+            return null;
+        }
+        return user.get();
     }
 
     @Override

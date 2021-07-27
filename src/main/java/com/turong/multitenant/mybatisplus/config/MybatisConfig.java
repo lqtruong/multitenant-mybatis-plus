@@ -1,10 +1,12 @@
 package com.turong.multitenant.mybatisplus.config;
 
-import com.baomidou.mybatisplus.extension.plugins.handler.DataPermissionHandler;
+import com.baomidou.mybatisplus.annotation.DbType;
+import com.baomidou.mybatisplus.core.MybatisConfiguration;
+import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.handler.TenantLineHandler;
-import com.baomidou.mybatisplus.extension.plugins.inner.DataPermissionInterceptor;
+import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.TenantLineInnerInterceptor;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.log4j.Log4j2;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.StringValue;
 import org.apache.commons.lang3.StringUtils;
@@ -12,19 +14,24 @@ import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.Objects;
+import java.util.Properties;
+
 @Configuration
 @MapperScan("com.turong.multitenant.mybatisplus.mapper")
-@Slf4j
+@Log4j2
 public class MybatisConfig {
 
-    @Bean(name = "tenantLineInnerInterceptor")
-    public TenantLineInnerInterceptor tenantLineInnerInterceptor() {
+    private static final String TENANT_COLUMN = "tenant";
 
-        TenantLineInnerInterceptor innerInterceptor = new TenantLineInnerInterceptor();
-        innerInterceptor.setTenantLineHandler(new TenantLineHandler() {
+    @Bean
+    public MybatisPlusInterceptor mybatisPlusInterceptor() {
+        MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
+        interceptor.addInnerInterceptor(new TenantLineInnerInterceptor(new TenantLineHandler() {
             @Override
             public Expression getTenantId() {
                 String currentTenant = AppContextHolder.getTenant();
+                log.info("Current tenant ={}", currentTenant);
                 if (StringUtils.isBlank(currentTenant)) {
                     throw new IllegalArgumentException("The tenant must be present!");
                 }
@@ -32,29 +39,33 @@ public class MybatisConfig {
             }
 
             @Override
-            public String getTenantIdColumn() {
-                return "tenant";
+            public boolean ignoreTable(String tableName) {
+                return false;
             }
 
-        });
+            @Override
+            public String getTenantIdColumn() {
+                return TENANT_COLUMN;
+            }
 
-
-        return innerInterceptor;
+        }));
+        interceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.MYSQL));
+        return interceptor;
     }
 
-    @Bean(name = "dataPermissionInterceptor")
-    public DataPermissionInterceptor dataPermissionInterceptor() {
-        log.debug("dataPermissionInterceptor");
-        DataPermissionInterceptor dataPermissionInterceptor = new DataPermissionInterceptor();
-        dataPermissionInterceptor.setDataPermissionHandler(new DataPermissionHandler() {
-            @Override
-            public Expression getSqlSegment(Expression where, String mappedStatementId) {
-                log.debug("where={}", where);
-                log.debug("mappedStatementId = {}", mappedStatementId);
-                return null;
-            }
-        });
-        return dataPermissionInterceptor;
+    @Bean
+    public MybatisConfiguration mybatisConfiguration() {
+        MybatisConfiguration configuration = new MybatisConfiguration();
+
+        Properties properties = configuration.getVariables();
+        if (Objects.isNull(properties)) {
+            properties = new Properties();
+        }
+        log.info("Current Ibatis configuration={}", properties);
+        properties.put("useDeprecatedExecutor", Boolean.FALSE);
+        configuration.setVariables(properties);
+
+        return configuration;
     }
 
 }

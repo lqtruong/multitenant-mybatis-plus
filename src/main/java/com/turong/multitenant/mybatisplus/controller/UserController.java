@@ -26,7 +26,7 @@ public class UserController {
     public ResponseEntity<UserResponse> getUser(
             @RequestHeader("x-tenant-id") final String tenant, @PathVariable final String id) {
         log.debug("Get user with id={}, tenant={}", id, tenant);
-        return ResponseEntity.ok(userService.getUser(id));
+        return ResponseEntity.ok(userConvert.toResponse(userService.getUser(id)));
 
     }
 
