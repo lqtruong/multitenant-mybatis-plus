@@ -9,9 +9,9 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.turong</groupId>
-    <artifactId>multitenant-mybatis-plus</artifactId>
+    <artifactId>multitenant-mybatis-plus-column</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>multitenant-mybatis-plus</name>
+    <name>multitenant-mybatis-plus-column</name>
     <description>Multi-tenancy using mybatis-plus + spring boot + mysql</description>
     <properties>
         <java.version>11</java.version>
